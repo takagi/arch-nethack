@@ -1,0 +1,7 @@
+[nethack]
+source = "git"
+git = "https://github.com/NetHack/NetHack.git"
+prefix = "NetHack-"
+include_regex = ".*_Released"
+from_pattern = "_Released"
+to_pattern = ""
