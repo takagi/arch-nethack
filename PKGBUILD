@@ -49,12 +49,28 @@ prepare() {
 	# Fix the way they disable __warn_unused_result__
 	sed '/^#define __warn_unused_result__/ s,/\*empty\*/,__unused__,' \
 		-i include/tradstdc.h
+	# Fix conflicting prototypes with modern glibc headers
+	sed -e 's/^E long lrand48();/E long FDECL(lrand48, (void));/' \
+		-e 's/^E void srand48();/E void FDECL(srand48, (long));/' \
+		-e 's/^E unsigned sleep();/E unsigned int FDECL(sleep, (unsigned int));/' \
+		-e 's/^E void FDECL(tputs, (const char \*, int, int (\*)()));/E void FDECL(tputs, (const char *, int, int (*)(int)));/' \
+		-i include/system.h
+	# Fix signal handler type for modern libc
+	sed -e 's/^#define SIG_RET_TYPE void (\*)()/#define SIG_RET_TYPE void (\*)(int)/' \
+		-i include/system.h
 
 	sed -e 's|^#GAMEUID.*|GAMEUID = root|' \
 		-e 's|^#GAMEGRP.*|GAMEGRP = games|' \
 		-e '/^FILEPERM\s*=/ s|0644|0664|' \
 		-e '/^DIRPERM\s*=/ s|0755|0775|' \
 		-i sys/unix/Makefile.top
+
+	# Custom keymap: swap b->n and n->m; move 'm' prefix to 'b'
+	sed -e 's/{ NHKF_REQMENU,          \x27m\x27, "reqmenu" }/{ NHKF_REQMENU,          \x27b\x27, "reqmenu" }/' \
+		-e 's/{ NHKF_NOPICKUP,         \x27m\x27, "nopickup" }/{ NHKF_NOPICKUP,         \x27b\x27, "nopickup" }/' \
+		-e 's/static const char sdir\[] = "hykulnjb><",/static const char sdir[] = "hykulmjn><",/' \
+		-e 's/static const char sdir\[] = "hzkulnjb><",/static const char sdir[] = "hzkulmjn><",/' \
+		-i src/cmd.c
 
 	sed -e "/^MANDIR\s*=/s|/usr/man/man6|$pkgdir/usr/share/man/man6|" \
 		-i sys/unix/Makefile.doc
